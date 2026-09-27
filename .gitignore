@@ -1,0 +1,7 @@
+# raw OpenStreetMap downloads (hundreds of MB, reproducible with tools/extract.py)
+data-raw/
+.wrangler/
+node_modules/
+.venv/
+__pycache__/
+.DS_Store

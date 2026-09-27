@@ -1,0 +1,2 @@
+# raw bytes despite the .txt name (see tools/build.mjs); never touch line endings
+public/data/horizon.u8.txt binary

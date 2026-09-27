@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sonnenplatz · which Biergarten is in the sun?</title>
+<meta name="description" content="A 3D block map of Munich where building shadows follow the real sun. See which beer gardens are sunny right now and when each one loses the sun.">
+<meta name="theme-color" content="#bfe2f3">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='21' cy='11' r='7' fill='%23ffc23d'/%3E%3Crect x='6' y='12' width='14' height='16' rx='3' fill='%23f6a91c'/%3E%3Crect x='5' y='9' width='16' height='6' rx='3' fill='%23fff8ec'/%3E%3Cpath d='M20 15h3a3 3 0 0 1 3 3v3a3 3 0 0 1-3 3h-3' fill='none' stroke='%23f6a91c' stroke-width='2.5'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css">
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<div id="sky"></div>
+<div id="stage" aria-label="3D map of the selected beer garden and its neighbourhood"></div>
+<div id="labels"></div>
+
+<header class="card title">
+  <div class="brand">
+    <svg class="logo" viewBox="0 0 32 32" aria-hidden="true"><circle cx="21" cy="11" r="7" fill="var(--sun)"/><g class="rays" stroke="var(--sun)" stroke-width="2" stroke-linecap="round"><path d="M21 1.5v1.8M30.5 11h-1.8M27.7 4.3l-1.3 1.3"/></g><rect x="6" y="12" width="14" height="16" rx="3" fill="var(--beer)"/><rect x="5" y="9" width="16" height="6" rx="3" fill="var(--foam)" stroke="var(--ink)" stroke-opacity=".12"/><path d="M20 15h3a3 3 0 0 1 3 3v3a3 3 0 0 1-3 3h-3" fill="none" stroke="var(--beer)" stroke-width="2.5"/><path d="M10 17v7M14 17v7" stroke="#fff" stroke-opacity=".45" stroke-width="1.6" stroke-linecap="round"/></svg>
+    <div>
+      <h1>Sonnenplatz</h1>
+      <p class="tag">which Biergarten is in the sun right now?</p>
+    </div>
+    <button class="icon-btn" id="mute" aria-label="Sound on" aria-pressed="false" title="Sound (M)">
+      <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8v4h3l4 3V5L6 8z"/><path class="on" d="M13 7.5a3.5 3.5 0 0 1 0 5M15.5 5a7 7 0 0 1 0 10"/><path class="off" d="M13.5 8l4 4m0-4l-4 4"/></svg>
+    </button>
+  </div>
+  <div class="clockrow">
+    <div class="clock"><span id="clock" class="num">--:--</span><span id="dateLabel">today</span></div>
+    <span class="chip" id="modeChip"><i></i><span>Live</span></span>
+    <div class="sunmini"><span class="micro">sun</span><span id="sunMini" class="num">–</span></div>
+  </div>
+</header>
+
+<main id="panels" data-tab="garden">
+  <nav class="tabs" role="tablist" aria-label="Panels">
+    <button role="tab" data-tab="garden" aria-selected="true">Garden</button>
+    <button role="tab" data-tab="list" aria-selected="false">Sunny <b id="tabCount">·</b></button>
+    <button role="tab" data-tab="sky" aria-selected="false">Sky</button>
+  </nav>
+
+  <section class="card garden" data-panel="garden" aria-live="polite">
+    <div class="micro">Selected Biergarten</div>
+    <h2 id="gName">Loading…</h2>
+    <p id="gWhere" class="sub"></p>
+    <div class="gbig">
+      <div class="pct"><span id="gPct" class="num">–</span><small>%<br>in sun</small></div>
+      <div class="gstatus">
+        <span class="status" id="gChip">–</span>
+        <p id="gNext" class="num"></p>
+      </div>
+    </div>
+    <div class="meter"><i id="gMeter"></i></div>
+    <dl id="gInfo" class="info"></dl>
+    <p id="gApprox" class="note"></p>
+  </section>
+
+  <section class="card sky" data-panel="sky">
+    <div class="skyhead">
+      <div>
+        <div class="micro"><svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="9" r="3"/><path d="M8 2v1.5M2.5 9H1M15 9h-1.5M3.8 4.8l1 1M12.2 4.8l-1 1M1 13.5h14"/></svg> Sun &amp; sky · München</div>
+        <div class="temp"><span id="temp" class="num">–</span><span class="deg">°</span></div>
+      </div>
+      <div class="cond">
+        <p id="condText">Fetching weather…</p>
+        <p id="cloudText" class="sub num"></p>
+      </div>
+    </div>
+    <svg id="arc" viewBox="0 0 300 120" aria-hidden="true"></svg>
+    <div class="sunstats">
+      <div><span class="micro">Sunrise</span><b id="sunrise" class="num">–</b></div>
+      <div><span class="micro">Sunset</span><b id="sunset" class="num">–</b></div>
+      <div><span class="micro">Height</span><b id="sunAlt" class="num">–</b></div>
+      <div><span class="micro">Direction</span><b id="sunAz" class="num">–</b></div>
+    </div>
+  </section>
+
+  <section class="card list" data-panel="list">
+    <div class="listhead">
+      <div class="micro" id="listTitle">In the sun now</div>
+      <div class="seg" role="radiogroup" aria-label="Filter">
+        <button data-filter="sunny" aria-pressed="true">Sunny</button>
+        <button data-filter="all" aria-pressed="false">All</button>
+        <button data-filter="map" aria-pressed="false">Map</button>
+      </div>
+    </div>
+    <label class="search"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5 14 14"/></svg><input id="q" type="search" placeholder="Search Biergärten  ( / )" autocomplete="off"></label>
+    <p id="cloudWarn" class="warn" hidden></p>
+    <div id="rows" class="rows" role="listbox" aria-label="Beer gardens"></div>
+    <svg id="minimap" hidden aria-label="Map of beer gardens"></svg>
+  </section>
+</main>
+
+<div id="timebar" class="card">
+  <button class="round" id="play" aria-label="Play time-lapse" title="Time-lapse (Space)">
+    <svg viewBox="0 0 20 20" width="18" height="18"><path class="pl" d="M6 4.5v11l9-5.5z" fill="currentColor"/><g class="pa" fill="currentColor"><rect x="5" y="4.5" width="3.5" height="11" rx="1"/><rect x="11.5" y="4.5" width="3.5" height="11" rx="1"/></g></svg>
+  </button>
+  <button class="pill" id="nowBtn" title="Back to now (N)">Now</button>
+  <div id="strip" role="slider" tabindex="0" aria-label="Time of day" aria-valuemin="0" aria-valuemax="1440" aria-valuenow="0">
+    <svg id="stripSvg" preserveAspectRatio="none"></svg>
+    <div id="handle"><span id="handleTime" class="num">--:--</span></div>
+  </div>
+  <div class="daynav">
+    <button class="round sm" id="prevDay" aria-label="Previous day" title="Previous day ([)"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 3 5 8l5 5"/></svg></button>
+    <span id="dayName" class="num">Today</span>
+    <button class="round sm" id="nextDay" aria-label="Next day" title="Next day (])"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 3 5 5-5 5"/></svg></button>
+  </div>
+</div>
+
+<footer class="help">
+  <p><b>Drag</b> to orbit · <b>Right-drag</b> to pan · <b>Scroll</b> to zoom</p>
+  <p><b>←/→</b> ±15 min · <b>Space</b> time-lapse · <b>↑/↓</b> next garden · <b>R</b> random sunny</p>
+  <p class="src" id="src">Buildings &amp; gardens © OpenStreetMap contributors · weather Open-Meteo</p>
+</footer>
+
+<div id="loader"><div class="sunspin"></div><p>Raising Munich…</p></div>
+<script type="module" src="app.js"></script>
+</body>
+</html>
